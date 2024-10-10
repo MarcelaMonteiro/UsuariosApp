@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RabbitMQ.Client;
 using UsuariosApp.Domain.Interfaces.Services;
 using UsuariosApp.Domain.Models.Dtos;
 
@@ -42,16 +43,51 @@ namespace UsuariosApp.API.Controllers
 
             }
             catch (ApplicationException e)
-            { 
-            
-                return StatusCode(400, new { mensagem = e.Message  });
+            {
+
+                return StatusCode(400, new { mensagem = e.Message });
             }
             catch (Exception e)
             {
                 //HTTP 500
-                return StatusCode(500, new {mensagem = $"Falha ao criar usuário: {e.Message}"});
-            
+                return StatusCode(500, new { mensagem = $"Falha ao criar usuário: {e.Message}" });
+
             }
         }
+        /// <summary>
+        /// Endpoint da API para autenticação de usuário
+        /// </summary>
+        /// <returns></returns>
+
+
+            [HttpPost] //método HTTP POST
+            [Route("autenticar")] //ENDPOIT: /api/usuarios/autenticar
+            [ProducesResponseType(typeof(AutenticarUsuarioResponseDto), 200)]
+            public IActionResult Autenticar(AutenticarUsuarioRequestDto request)
+            {
+            try
+            {
+                //executando a autenticação do usuário na camada de domínio
+                var response = _usuarioDomainService.Autenticar(request);
+
+                //HTTP 200 (OK)
+                return StatusCode(201, response);
+
+            }
+            catch (ApplicationException e)
+            {
+                //HTTP 401 (UNAUTHORIZED)
+                return StatusCode (401, new { mensagem = e.Message });
+
+            }
+            catch(Exception e)
+            {
+                //HTTP 500
+                return StatusCode(500, new { mensagem = $"Falha ao autenticar usuário: {e.Message}" });
+
+            }
+
+        }
+        
     }
 }

@@ -15,6 +15,6 @@ namespace UsuariosApp.Domain.Interfaces.Services
 
         CriarUsuarioResponseDto Criar(CriarUsuarioRequestDto request);
 
-
+        AutenticarUsuarioResponseDto Autenticar(AutenticarUsuarioRequestDto request);
     }
 }

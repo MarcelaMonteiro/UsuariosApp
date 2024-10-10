@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using UsuariosApp.Domain.Helpers;
 using UsuariosApp.Domain.Interfaces.Messages;
 using UsuariosApp.Domain.Interfaces.Repositories;
+using UsuariosApp.Domain.Interfaces.Security;
 using UsuariosApp.Domain.Interfaces.Services;
 using UsuariosApp.Domain.Models.Dtos;
 using UsuariosApp.Domain.Models.Entities;
@@ -22,13 +23,16 @@ namespace UsuariosApp.Domain.Services
         //atributo para acessar os métodos da interface IUsuarioRepository
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IMessageProducer _messageProducer;
+        private readonly IJwtTokenService _jwtTokenService;
 
         //construtor que irá inicializar / instanciar a interface em tempo de execução
-        public UsuarioDomainService(IUsuarioRepository usuarioRepository, IMessageProducer messageProducer)
+        public UsuarioDomainService(IUsuarioRepository usuarioRepository, IMessageProducer messageProducer, IJwtTokenService jwtTokenService)
         {
             _usuarioRepository = usuarioRepository;
             _messageProducer = messageProducer;
+            _jwtTokenService = jwtTokenService;
         }
+
 
 
         public CriarUsuarioResponseDto Criar(CriarUsuarioRequestDto request)
@@ -72,6 +76,30 @@ namespace UsuariosApp.Domain.Services
 
             return response;
         }
+
+        public AutenticarUsuarioResponseDto Autenticar(AutenticarUsuarioRequestDto request)
+        {
+            //consultar o usuário do banco de dados através do email e da senha
+            var usuario = _usuarioRepository.Get(request.Email, CryptoHelper.CreateSHA256(request.Senha));
+
+            //verificar se o usuário não foi encontrado
+            if(usuario == null)
+                throw new ApplicationException("Acesso negado, Usuário não encontrado.");
+
+            //retornar os dados do usuário autenticado
+            var response = new AutenticarUsuarioResponseDto
+            {
+                Id = usuario.Id,
+                Nome = usuario.Nome,
+                Email = usuario.Email,
+                Token = _jwtTokenService.CreateToken(usuario),
+                DataHoraAcesso = DateTime.Now,
+                DataHoraExpiracao = _jwtTokenService.GetExpiration()
+
+            };
+            return response;
+        }
+
     }
 }
 
